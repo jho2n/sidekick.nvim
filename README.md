@@ -20,7 +20,7 @@ without leaving your editor.
   - 📦 **Pre-configured for Popular Tools**: Out-of-the-box support for Claude, Gemini, Grok, Codex, Copilot CLI, and more.
   - ✨ **Context-Aware Prompts**: Automatically include file content, cursor position, and diagnostics in your prompts.
   - 📝 **Prompt Library**: A library of pre-defined prompts for common tasks like explaining code, fixing issues, or writing tests.
-  - 🔄 **Session Persistence**: Keep your CLI sessions alive with `tmux` and `zellij` integration.
+  - 🔄 **Session Persistence**: Keep your CLI sessions alive with `tmux`, `zellij`, `kitty`, or `cmux` integration.
   - 📂 **Automatic File Watching**: Automatically reloads files in Neovim when they are modified by AI tools.
 
 - **🔌 Extensible and Customizable**
@@ -316,14 +316,15 @@ local defaults = {
       nav = nil,
     },
     ---@class sidekick.cli.Mux
-    ---@field backend? "tmux"|"zellij" Multiplexer backend to persist CLI sessions
+    ---@field backend? "tmux"|"zellij"|"kitty"|"cmux" Multiplexer backend to persist CLI sessions
     mux = {
-      backend = vim.env.ZELLIJ and "zellij" or "tmux", -- default to tmux unless zellij is detected
+      -- default to tmux unless zellij/cmux is detected
+      backend = vim.env.ZELLIJ and "zellij" or vim.env.CMUX_WORKSPACE_ID and "cmux" or "tmux",
       enabled = false,
       -- terminal: new sessions will be created for each CLI tool and shown in a Neovim terminal
       -- window: when run inside a terminal multiplexer, new sessions will be created in a new tab
       -- split: when run inside a terminal multiplexer, new sessions will be created in a new split
-      -- NOTE: zellij only supports `terminal`
+      -- NOTE: zellij only supports `terminal`; kitty/cmux only support `window` and `split`
       create = "terminal", ---@type "terminal"|"window"|"split"
       split = {
         vertical = true, -- vertical or horizontal split
@@ -927,18 +928,25 @@ Use them together for the complete experience!
 
 ### Terminal sessions not persisting?
 
-Make sure you have tmux or zellij installed and enable the multiplexer:
+Make sure you have tmux, zellij, kitty, or cmux installed and enable the multiplexer:
 
 ```lua
 opts = {
   cli = {
     mux = {
       enabled = true,
-      backend = "tmux", -- or "zellij"
+      backend = "tmux", -- or "zellij", "kitty", "cmux"
     },
   },
 }
 ```
+
+Notes:
+
+- `zellij` supports `create = "terminal"` only.
+- `kitty` requires kitty remote control (`allow_remote_control`, `remote_control_password`, or `KITTY_LISTEN_ON`) and supports `create = "window"` or `"split"`.
+- `cmux` requires a running cmux socket or cmux-managed terminal and supports `create = "window"` or `"split"`.
+- `cmux` scrollback capture is not available yet, so Sidekick's mux scrollback overlay falls back to native terminal scrolling there.
 
 ### Do I need a GitHub Copilot subscription?
 

@@ -66,14 +66,30 @@ function M.check()
     ok("Terminal multiplexer integration is disabled")
   end
 
-  for _, mux in ipairs({ "tmux", "zellij" }) do
-    if vim.fn.executable(mux) == 1 then
-      ok("`" .. mux .. "` is installed")
+  local Session = require("sidekick.cli.session")
+  for _, mux in ipairs(Session.backend_names) do
+    local spec = Session.backend_specs[mux]
+    local installed = Session.backend_available(mux)
+    local commands = table.concat(vim.tbl_map(function(cmd)
+      return "`" .. cmd .. "`"
+    end, spec.commands), " or ")
+    if installed then
+      ok(("Multiplexer backend `%s` is available (%s)"):format(mux, commands))
     elseif mux == Config.cli.mux.backend then
-      error("Multiplexer backend `" .. mux .. "` is not installed")
+      error(("Multiplexer backend `%s` is not available; expected %s"):format(mux, commands))
     else
-      ok("`" .. mux .. "` is not installed, but it's not the configured backend")
+      ok(("Multiplexer backend `%s` is not available, but it's not the configured backend"):format(mux))
     end
+  end
+
+  if Config.cli.mux.backend == "kitty" and not vim.env.KITTY_LISTEN_ON and vim.env.TERM ~= "xterm-kitty" then
+    warn(
+      "Kitty backend requires kitty remote control (`allow_remote_control`, `remote_control_password`, or `KITTY_LISTEN_ON`)"
+    )
+  end
+
+  if Config.cli.mux.backend == "cmux" and not vim.env.CMUX_WORKSPACE_ID and not vim.env.CMUX_SOCKET_PATH then
+    warn("cmux backend requires a running cmux socket or a cmux-managed terminal")
   end
 
   if vim.fn.has("win32") == 0 then

@@ -7,6 +7,37 @@ M.backends = {} ---@type table<string,sidekick.cli.Session>
 M.did_setup = false
 M._attached = {} ---@type table<string,sidekick.cli.Session>
 
+---@class sidekick.cli.session.BackendSpec
+---@field module string
+---@field commands string[] CLI executables that can provide this backend
+---@field available? fun():boolean
+---@field notes? string[]
+
+M.backend_names = { "tmux", "zellij", "kitty", "cmux" }
+
+---@type table<string, sidekick.cli.session.BackendSpec>
+M.backend_specs = {
+  tmux = {
+    module = "sidekick.cli.session.tmux",
+    commands = { "tmux" },
+  },
+  zellij = {
+    module = "sidekick.cli.session.zellij",
+    commands = { "zellij" },
+    notes = { "supports `create = \"terminal\"` only" },
+  },
+  kitty = {
+    module = "sidekick.cli.session.kitty",
+    commands = { "kitten", "kitty" },
+    notes = { "requires kitty remote control" },
+  },
+  cmux = {
+    module = "sidekick.cli.session.cmux",
+    commands = { "cmux" },
+    notes = { "requires a running cmux socket" },
+  },
+}
+
 ---@class sidekick.cli.session.State
 ---@field id string unique id of the running tool (typically pid of tool)
 ---@field cwd string
@@ -80,7 +111,13 @@ function M.new(state)
   local tool = state.tool
   tool = type(tool) == "string" and Config.get_tool(tool) or tool --[[@as sidekick.cli.Tool]]
   local backend = state.backend or (Config.cli.mux.enabled and Config.cli.mux.backend or "terminal")
-  local super = assert(M.backends[backend], "unknown backend: " .. backend)
+  local super = M.backends[backend]
+  if not super and backend ~= "terminal" then
+    Util.warn(("Multiplexer backend `%s` is not available. Falling back to `terminal`."):format(backend))
+    backend = "terminal"
+    super = M.backends[backend]
+  end
+  super = assert(super, "unknown backend: " .. backend)
   local meta = getmetatable(state)
   local self = setmetatable(state, super) --[[@as sidekick.cli.Session]]
   self.tool = tool
@@ -115,16 +152,38 @@ function M.register(name, backend)
   M.backends[name] = backend
 end
 
+---@param name string
+function M.backend_available(name)
+  local spec = M.backend_specs[name]
+  if not spec then
+    return false
+  end
+  if spec.available then
+    return spec.available()
+  end
+  for _, cmd in ipairs(spec.commands) do
+    if vim.fn.executable(cmd) == 1 then
+      return true
+    end
+  end
+  return false
+end
+
 function M.setup()
   if M.did_setup then
     return
   end
   M.did_setup = true
   Config.tools() -- load tools, since they may register session backends
-  local session_backends = { tmux = "sidekick.cli.session.tmux", zellij = "sidekick.cli.session.zellij" }
-  for name, mod in pairs(session_backends) do
-    if vim.fn.executable(name) == 1 then
-      M.register(name, require(mod))
+  for _, name in ipairs(M.backend_names) do
+    local spec = M.backend_specs[name]
+    if M.backend_available(name) then
+      local ok, backend = pcall(require, spec.module)
+      if ok then
+        M.register(name, backend)
+      else
+        Util.error(("Failed to load `%s` session backend: %s"):format(name, backend))
+      end
     end
   end
   M.register("terminal", require("sidekick.cli.terminal"))
