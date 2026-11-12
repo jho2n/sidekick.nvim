@@ -13,10 +13,15 @@ M._attached = {} ---@type table<string,sidekick.cli.Session>
 ---@field available? fun():boolean
 ---@field notes? string[]
 
-M.backend_names = { "tmux", "zellij", "kitty", "cmux", "rex" }
+M.backend_names = { "tmux", "zellij", "kitty", "cmux", "rex", "herdr" }
 
 ---@type table<string, sidekick.cli.session.BackendSpec>
 M.backend_specs = {
+  herdr = {
+    module = "sidekick.cli.session.herdr",
+    commands = { "hc" },
+    notes = { "supports `create = \"terminal\"` only; requires herdr-core (`hc`)" },
+  },
   rex = {
     module = "sidekick.cli.session.rex",
     commands = { "rex" },

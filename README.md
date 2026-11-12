@@ -20,7 +20,7 @@ without leaving your editor.
   - 📦 **Pre-configured for Popular Tools**: Out-of-the-box support for Claude, Gemini, Grok, Codex, Copilot CLI, and more.
   - ✨ **Context-Aware Prompts**: Automatically include file content, cursor position, and diagnostics in your prompts.
   - 📝 **Prompt Library**: A library of pre-defined prompts for common tasks like explaining code, fixing issues, or writing tests.
-  - 🔄 **Session Persistence**: Keep your CLI sessions alive with `tmux`, `zellij`, `kitty`, `cmux`, or `rex` integration.
+  - 🔄 **Session Persistence**: Keep your CLI sessions alive with `tmux`, `zellij`, `kitty`, `cmux`, `rex`, or `herdr` integration.
   - 📂 **Automatic File Watching**: Automatically reloads files in Neovim when they are modified by AI tools.
 
 - **🔌 Extensible and Customizable**
@@ -316,7 +316,7 @@ local defaults = {
       nav = nil,
     },
     ---@class sidekick.cli.Mux
-    ---@field backend? "tmux"|"zellij"|"kitty"|"cmux"|"rex" Multiplexer backend to persist CLI sessions
+    ---@field backend? "tmux"|"zellij"|"kitty"|"cmux"|"rex"|"herdr" Multiplexer backend to persist CLI sessions
     mux = {
       -- default to tmux unless zellij/cmux is detected
       backend = vim.env.ZELLIJ and "zellij" or vim.env.CMUX_WORKSPACE_ID and "cmux" or "tmux",
@@ -324,7 +324,7 @@ local defaults = {
       -- terminal: new sessions will be created for each CLI tool and shown in a Neovim terminal
       -- window: when run inside a terminal multiplexer, new sessions will be created in a new tab
       -- split: when run inside a terminal multiplexer, new sessions will be created in a new split
-      -- NOTE: zellij only supports `terminal`; kitty/cmux/rex only support `window` and `split`
+      -- NOTE: zellij/herdr only support `terminal`; kitty/cmux/rex only support `window` and `split`
       create = "terminal", ---@type "terminal"|"window"|"split"
       split = {
         vertical = true, -- vertical or horizontal split
@@ -929,14 +929,14 @@ Use them together for the complete experience!
 
 ### Terminal sessions not persisting?
 
-Make sure you have tmux, zellij, kitty, cmux, or rex installed and enable the multiplexer:
+Make sure you have tmux, zellij, kitty, cmux, rex, or herdr-core installed and enable the multiplexer:
 
 ```lua
 opts = {
   cli = {
     mux = {
       enabled = true,
-      backend = "tmux", -- or "zellij", "kitty", "cmux", "rex"
+      backend = "tmux", -- or "zellij", "kitty", "cmux", "rex", "herdr"
     },
   },
 }
@@ -953,6 +953,11 @@ Notes:
   The default `"terminal"` mode falls back to a native tab. Split sizes use a fraction (0-1);
   cell-based sizes use Rex's default ratio. Existing AI sessions in the current Rex session
   can be selected, focused, and sent context without starting another AI process.
+- `herdr` uses herdr-core (`hc`) on macOS/Linux, with `hc` and `env` on PATH.
+  It supports `create = "terminal"`: `hc attach` shows a persistent core terminal inside Neovim.
+  Requests for `"window"` or `"split"` fall back to this mode. The Herdr app window is optional.
+  Existing local AI terminals can be selected. Closing Neovim detaches without stopping the AI process.
+  New Codex sessions use `--no-daemon` so the process stays inside its core terminal.
 
 ### Do I need a GitHub Copilot subscription?
 
