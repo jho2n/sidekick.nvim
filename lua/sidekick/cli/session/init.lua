@@ -13,10 +13,15 @@ M._attached = {} ---@type table<string,sidekick.cli.Session>
 ---@field available? fun():boolean
 ---@field notes? string[]
 
-M.backend_names = { "tmux", "zellij", "kitty", "cmux" }
+M.backend_names = { "tmux", "zellij", "kitty", "cmux", "rex" }
 
 ---@type table<string, sidekick.cli.session.BackendSpec>
 M.backend_specs = {
+  rex = {
+    module = "sidekick.cli.session.rex",
+    commands = { "rex" },
+    notes = { "requires Neovim running inside Rex; supports native tabs and splits" },
+  },
   tmux = {
     module = "sidekick.cli.session.tmux",
     commands = { "tmux" },

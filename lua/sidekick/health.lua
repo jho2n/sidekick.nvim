@@ -92,6 +92,10 @@ function M.check()
     warn("cmux backend requires a running cmux socket or a cmux-managed terminal")
   end
 
+  if Config.cli.mux.backend == "rex" and not vim.env.REX_SESSION then
+    warn("Rex backend requires Neovim running inside Rex (REX_SESSION); `rex` must be on PATH")
+  end
+
   if vim.fn.has("win32") == 0 then
     for _, c in ipairs({ "ps", "lsof" }) do
       if vim.fn.executable(c) == 1 then

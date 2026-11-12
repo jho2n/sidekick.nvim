@@ -82,7 +82,7 @@ local defaults = {
       nav = nil,
     },
     ---@class sidekick.cli.Mux
-    ---@field backend? "tmux"|"zellij"|"kitty"|"cmux" Multiplexer backend to persist CLI sessions
+    ---@field backend? "tmux"|"zellij"|"kitty"|"cmux"|"rex" Multiplexer backend to persist CLI sessions
     mux = {
       -- default to tmux unless zellij/cmux is detected
       backend = vim.env.ZELLIJ and "zellij" or vim.env.CMUX_WORKSPACE_ID and "cmux" or "tmux",
@@ -90,7 +90,7 @@ local defaults = {
       -- terminal: new sessions will be created for each CLI tool and shown in a Neovim terminal
       -- window: when run inside a terminal multiplexer, new sessions will be created in a new tab
       -- split: when run inside a terminal multiplexer, new sessions will be created in a new split
-      -- NOTE: zellij only supports `terminal`; kitty/cmux only support `window` and `split`
+      -- NOTE: zellij only supports `terminal`; kitty/cmux/rex only support `window` and `split`
       create = "terminal", ---@type "terminal"|"window"|"split"
       split = {
         vertical = true, -- vertical or horizontal split
@@ -223,7 +223,7 @@ function M.setup(opts)
     require("sidekick.status").setup()
 
     M.validate("cli.win.layout", { "float", "left", "bottom", "top", "right" })
-    M.validate("cli.mux.backend", { "tmux", "zellij", "kitty", "cmux" })
+    M.validate("cli.mux.backend", { "tmux", "zellij", "kitty", "cmux", "rex" })
     M.validate("cli.mux.create", { "terminal", "window", "split" })
     M.validate("nes.diff.show", { "always", "cursor" })
   end)
