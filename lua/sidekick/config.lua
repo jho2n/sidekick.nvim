@@ -84,8 +84,14 @@ local defaults = {
     ---@class sidekick.cli.Mux
     ---@field backend? "tmux"|"zellij"|"kitty"|"cmux"|"rex"|"herdr" Multiplexer backend to persist CLI sessions
     mux = {
-      -- default to tmux unless zellij/cmux is detected
-      backend = vim.env.ZELLIJ and "zellij" or vim.env.CMUX_WORKSPACE_ID and "cmux" or "tmux",
+      -- default to the detected environment: zellij > cmux > tmux > rex > kitty, otherwise tmux
+      -- kitty is only detected when remote control listens on a socket (`KITTY_LISTEN_ON`)
+      backend = vim.env.ZELLIJ and "zellij"
+        or vim.env.CMUX_WORKSPACE_ID and "cmux"
+        or vim.env.TMUX and "tmux"
+        or vim.env.REX_SESSION and "rex"
+        or vim.env.KITTY_LISTEN_ON and "kitty"
+        or "tmux",
       enabled = false,
       -- terminal: new sessions will be created for each CLI tool and shown in a Neovim terminal
       -- window: when run inside a terminal multiplexer, new sessions will be created in a new tab
